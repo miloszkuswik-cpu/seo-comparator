@@ -56,7 +56,7 @@ export default function HomePage() {
       });
 
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Błąd'); setLoading(false); return; }
+      if (!data) return (<div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-4 text-center"><div className="text-5xl">⚠️</div><h1 className="text-xl font-semibold text-white">Nie znaleziono raportu</h1><p className="text-gray-400 text-sm max-w-md">Raport wygasł po restarcie serwera. Uruchom nową analizę.</p><Link href="/" className="mt-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium">← Wróć do strony głównej</Link></div>);
 
       const crawlRes = await fetch(`/api/projects/${data.id}/crawl`, { method: 'POST' });
       if (!crawlRes.ok) { setError('Błąd uruchamiania crawla'); setLoading(false); return; }
