@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  domains     String   // JSON array of domains
+  myDomain    String?
+  maxPages    Int      @default(50)
+  modules     String   // JSON array of enabled modules
+  status      String   @default("idle") // idle, running, done, error
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  crawlRuns   CrawlRun[]
+  issues      Issue[]
+  recommendations Recommendation[]
+  exports     Export[]
+}
+
+model CrawlRun {
+  id        String   @id @default(cuid())
+  projectId String
+  domain    String
+  status    String   @default("pending")
+  startedAt DateTime?
+  finishedAt DateTime?
+  error     String?
+  pagesFound Int     @default(0)
+  pagesAnalyzed Int  @default(0)
+  
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pages     Page[]
+}
+
+model Page {
+  id              String   @id @default(cuid())
+  crawlRunId      String
+  projectId       String
+  domain          String
+  url             String
+  finalUrl        String?
+  statusCode      Int?
+  isRedirect      Boolean  @default(false)
+  contentType     String?
+  fetchTimeMs     Int?
+  error           String?
+  
+  title           String?
+  titleLength     Int?
+  metaDescription String?
+  metaDescLength  Int?
+  canonical       String?
+  metaRobots      String?
+  isIndexable     Boolean  @default(true)
+  
+  h1              String?
+  h1Count         Int      @default(0)
+  h2List          String?  // JSON
+  h3List          String?  // JSON
+  wordCount       Int      @default(0)
+  bodyText        String?
+  
+  internalLinksCount  Int  @default(0)
+  externalLinksCount  Int  @default(0)
+  internalLinks   String?  // JSON [{url, anchor}]
+  externalLinks   String?  // JSON [{url, anchor}]
+  
+  imagesCount     Int      @default(0)
+  imagesNoAlt     Int      @default(0)
+  imageAlts       String?  // JSON
+  
+  hasOpenGraph    Boolean  @default(false)
+  hasTwitterCards Boolean  @default(false)
+  hasJsonLd       Boolean  @default(false)
+  schemaTypes     String?  // JSON
+  hasFaqSchema    Boolean  @default(false)
+  hasArticleSchema Boolean @default(false)
+  hasMedicalWebPage Boolean @default(false)
+  hasLocalBusiness Boolean @default(false)
+  hasPhysician    Boolean  @default(false)
+  hasMedicalClinic Boolean @default(false)
+  
+  hasCta          Boolean  @default(false)
+  hasForm         Boolean  @default(false)
+  hasPhone        Boolean  @default(false)
+  hasEmail        Boolean  @default(false)
+  hasBookingLink  Boolean  @default(false)
+  detectedWidgets String?  // JSON
+  
+  hasAuthor       Boolean  @default(false)
+  authorBio       Boolean  @default(false)
+  publishDate     String?
+  updateDate      String?
+  hasExternalSources Boolean @default(false)
+  hasMedicalDisclaimer Boolean @default(false)
+  hasCompanyInfo  Boolean  @default(false)
+  hasTerms        Boolean  @default(false)
+  hasPrivacyPolicy Boolean @default(false)
+  hasContact      Boolean  @default(false)
+  
+  technicalScore    Float  @default(0)
+  onPageScore       Float  @default(0)
+  contentScore      Float  @default(0)
+  internalLinksScore Float @default(0)
+  imageScore        Float  @default(0)
+  schemaScore       Float  @default(0)
+  medicalTrustScore Float  @default(0)
+  localSeoScore     Float  @default(0)
+  conversionScore   Float  @default(0)
+  overallScore      Float  @default(0)
+  
+  crawlRun  CrawlRun @relation(fields: [crawlRunId], references: [id], onDelete: Cascade)
+  
+  @@index([projectId, domain])
+  @@index([url])
+}
+
+model Issue {
+  id          String @id @default(cuid())
+  projectId   String
+  domain      String
+  url         String?
+  type        String
+  severity    String // critical, high, medium, low
+  title       String
+  description String?
+  
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@index([projectId, severity])
+}
+
+model Recommendation {
+  id          String @id @default(cuid())
+  projectId   String
+  domain      String?
+  url         String?
+  priority    String // critical, high, medium, low
+  category    String
+  title       String
+  description String?
+  action      String?
+  seoImpact   String?
+  difficulty  String?
+  
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Export {
+  id        String   @id @default(cuid())
+  projectId String
+  type      String   // csv, xlsx
+  filename  String
+  createdAt DateTime @default(now())
+  
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
